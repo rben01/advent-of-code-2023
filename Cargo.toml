@@ -16,7 +16,7 @@
 	strum_macros = "0.25.3"
 
 [features]
-	default = ["day_02"]
+	default = ["all_days"]
 
 	all_days = [
 		"day_01",
