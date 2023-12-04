@@ -1,11 +1,7 @@
-use std::{
-	collections::{HashMap, HashSet},
-	fmt::Write,
-};
-
 // tag::setup[]
 use crate::{read_file, utils::get_nsew_diag_adjacent, Answer};
 use ndarray::prelude::*;
+use std::collections::{HashMap, HashSet};
 
 fn ans_for_input(input: &str) -> Answer<u32, u32> {
 	let grid = read_input(input);
