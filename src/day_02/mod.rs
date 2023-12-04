@@ -6,7 +6,7 @@ use strum_macros::EnumString;
 fn ans_for_input(input: &str) -> Answer<u32, u32> {
 	let games = read_input(input).unwrap();
 
-	(1, (pt1(&games), pt2(&games))).into()
+	(2, (pt1(&games), pt2(&games))).into()
 }
 
 pub fn ans() -> Answer<u32, u32> {
@@ -165,12 +165,9 @@ mod test {
 
 	#[test]
 	fn test() {
-		run_test(
+		run_tests(
 			&*read_input(&read_file!("sample_input.txt")).unwrap(),
 			(pt1, 8),
-		);
-		run_test(
-			&*read_input(&read_file!("sample_input.txt")).unwrap(),
 			(pt2, 2286),
 		);
 		run_tests(
