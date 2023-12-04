@@ -18,35 +18,37 @@ fn read_input(input: &str) -> &str {
 // tag::pt1[]
 fn lines_to_nums(lines: impl IntoIterator<Item = &str>, words_as_digits: bool) -> u32 {
 	// digit_strs[i] => stringified(i)
-	let digit_strs = [
+	const DIGIT_STRS: [&str; 10] = [
 		"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
 	];
+
+	let find_digit = |line_suffix: &str, c: char| -> Option<u32> {
+		c.to_digit(10).or_else(|| {
+			if words_as_digits {
+				(0..).zip(&DIGIT_STRS).find_map(|(digit_value, digit_str)| {
+					line_suffix.starts_with(digit_str).then_some(digit_value)
+				})
+			} else {
+				None
+			}
+		})
+	};
+
 	lines
 		.into_iter()
 		.map(|line| {
-			let mut first_digit = None;
-			let mut last_digit = None;
+			let first_digit = line
+				.char_indices()
+				.find_map(|(i, c)| find_digit(&line[i..], c))
+				.unwrap();
 
-			for (i, c) in line.char_indices() {
-				let digit = c.to_digit(10).or_else(|| {
-					if words_as_digits {
-						(0..).zip(&digit_strs).find_map(|(digit_value, digit_str)| {
-							line[i..].starts_with(digit_str).then_some(digit_value)
-						})
-					} else {
-						None
-					}
-				});
+			let last_digit = line
+				.char_indices()
+				.rev()
+				.find_map(|(i, c)| find_digit(&line[i..], c))
+				.unwrap();
 
-				if digit.is_some() {
-					if first_digit.is_none() {
-						first_digit = digit;
-					}
-					last_digit = digit;
-				}
-			}
-
-			first_digit.unwrap() * 10 + last_digit.unwrap()
+			first_digit * 10 + last_digit
 		})
 		.sum()
 }
