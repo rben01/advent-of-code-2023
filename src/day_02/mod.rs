@@ -24,10 +24,7 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 				.ok_or_else(|| "could not get game id".to_owned())?;
 
 			let game_id_end = game_id_match.end();
-			let game_id = game_id_match
-				.as_str()
-				.parse::<u32>()
-				.map_err(|e| e.to_string())?;
+			let game_id = game_id_match.as_str().parse::<u32>()?;
 
 			let rounds = regex!(r"[^:;]+")
 				.find_iter(&line[game_id_end..])
@@ -41,14 +38,12 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 								.name("count")
 								.ok_or_else(|| format!("could not get count from round {round:?}"))?
 								.as_str()
-								.parse::<u32>()
-								.map_err(|e| e.to_string())?;
+								.parse()?;
 							let color = cube_counts
 								.name("color")
 								.ok_or_else(|| format!("could not get color from round {round:?}"))?
 								.as_str()
-								.parse::<Color>()
-								.map_err(|e| e.to_string())?;
+								.parse()?;
 
 							Ok(CubeCount { color, count })
 						})
@@ -65,7 +60,7 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 		.collect()
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumString)]
+#[derive(Debug, Clone, Copy, EnumString)]
 #[strum(ascii_case_insensitive)]
 enum Color {
 	Red,

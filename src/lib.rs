@@ -10,33 +10,11 @@
 	clippy::similar_names
 )]
 
+pub(crate) mod error;
 pub(crate) mod utils;
 
+pub(crate) use error::{AocError, AocResult, ToResultDefaultErr};
 use std::fmt::{Debug, Display};
-
-pub type AocResult<T> = Result<T, String>;
-pub trait ToResultDefaultErr<T> {
-	/// Converts something to a "default" Result
-	/// # Ok
-	/// Good values are preserved, turning into `Ok(x)`
-	/// # Errors
-	/// Errors are turned into `Err(default error message)` where the error message is
-	/// determined by the trait implementation (by the time you're at the call site, the
-	/// error message is already set in stone)
-	fn to_result(self) -> AocResult<T>;
-}
-
-impl<T> ToResultDefaultErr<T> for Option<T> {
-	fn to_result(self) -> AocResult<T> {
-		match self {
-			Some(t) => Ok(t),
-			None => Err(format!(
-				"expected a Some({:?}) but got None",
-				std::any::type_name::<T>(),
-			)),
-		}
-	}
-}
 
 // tag::mods[]
 macro_rules! include_days {
@@ -50,7 +28,7 @@ include_days!(
 	day_02:"day_02",
 	day_03:"day_03",
 	day_04:"day_04",
-   //  day_05:"day_05",
+	day_05:"day_05",
    //  day_06:"day_06",
    //  day_07:"day_07",
    //  day_08:"day_08",

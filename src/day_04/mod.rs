@@ -1,5 +1,5 @@
 // tag::setup[]
-use crate::{read_file, regex, Answer, AocResult, Cast, ToResultDefaultErr};
+use crate::{read_file, regex, Answer, AocError, Cast, ToResultDefaultErr};
 use std::{collections::HashSet, str::FromStr};
 
 fn ans_for_input(input: &str) -> Answer<usize, usize> {
@@ -15,7 +15,7 @@ fn read_input(input: &str) -> Vec<Card> {
 	input
 		.lines()
 		.map(Card::from_str)
-		.collect::<AocResult<_>>()
+		.collect::<Result<_, _>>()
 		.unwrap()
 }
 
@@ -27,28 +27,23 @@ struct Card {
 }
 
 impl FromStr for Card {
-	type Err = String;
+	type Err = AocError;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
 		let card_re =
 			regex!(r"Card\s+(?P<id>\d+)\s*:\s*(?P<winning_nums>[^|]+)\|(?P<have_nums>.*)$");
 		let m = card_re.captures(s).to_result()?;
 
-		let id = m
-			.name("id")
-			.to_result()?
-			.as_str()
-			.parse::<u32>()
-			.map_err(|e| e.to_string())?;
+		let id = m.name("id").to_result()?.as_str().parse::<u32>()?;
 
 		let winning_nums = regex!(r"\d+")
 			.find_iter(m.name("winning_nums").to_result()?.as_str())
-			.map(|num_str| num_str.as_str().parse::<u32>().map_err(|e| e.to_string()))
-			.collect::<AocResult<_>>()?;
+			.map(|num_str| num_str.as_str().parse::<u32>())
+			.collect::<Result<_, _>>()?;
 		let have_nums = regex!(r"\d+")
 			.find_iter(m.name("have_nums").to_result()?.as_str())
-			.map(|num_str| num_str.as_str().parse::<u32>().map_err(|e| e.to_string()))
-			.collect::<AocResult<_>>()?;
+			.map(|num_str| num_str.as_str().parse::<u32>())
+			.collect::<Result<_, _>>()?;
 
 		Ok(Card {
 			id,
