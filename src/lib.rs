@@ -1,14 +1,10 @@
-#![feature(binary_heap_into_iter_sorted, anonymous_lifetime_in_impl_trait)]
-#![warn(clippy::pedantic)]
-#![allow(
-	clippy::too_many_lines,
-	clippy::enum_glob_use,
-	clippy::missing_panics_doc,
-	clippy::must_use_candidate,
-	clippy::redundant_closure_for_method_calls,
-	clippy::type_complexity,
-	clippy::similar_names
+#![feature(
+	binary_heap_into_iter_sorted,
+	anonymous_lifetime_in_impl_trait,
+	if_let_guard
 )]
+#![warn(clippy::pedantic)]
+#![allow(clippy::enum_glob_use, clippy::missing_panics_doc)]
 
 pub(crate) mod error;
 pub(crate) mod utils;

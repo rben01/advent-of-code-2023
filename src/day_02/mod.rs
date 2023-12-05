@@ -31,7 +31,7 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 				.map(|m| {
 					let round = m.as_str().trim();
 
-					regex!(r"(?P<count>\d+)\s+(?P<color>\w+)")
+					let counts = regex!(r"(?P<count>\d+)\s+(?P<color>\w+)")
 						.captures_iter(round)
 						.map(|cube_counts| {
 							let count = cube_counts
@@ -47,8 +47,9 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 
 							Ok(CubeCount { color, count })
 						})
-						.collect::<AocResult<Vec<_>>>()
-						.map(|counts| Round { counts })
+						.collect::<AocResult<Vec<_>>>()?;
+
+					Ok(Round { counts })
 				})
 				.collect::<AocResult<Vec<_>>>()?;
 
@@ -124,6 +125,7 @@ fn pt1(games: impl IntoIterator<Item = &Game>) -> u32 {
 	.into_iter()
 	.map(|CubeCount { color, count }| (color, count))
 	.collect::<HashMap<_, _>>();
+
 	games
 		.into_iter()
 		.filter_map(|game| game.is_possible(&upper_limits).then_some(game.id))
@@ -159,12 +161,16 @@ mod test {
 	use crate::{run_test, run_tests};
 
 	#[test]
-	fn test() {
+	fn sample() {
 		run_tests(
 			&*read_input(&read_file!("sample_input.txt")).unwrap(),
 			(pt1, 8),
 			(pt2, 2286),
 		);
+	}
+
+	#[test]
+	fn test() {
 		run_tests(
 			&*read_input(&read_file!("input.txt")).unwrap(),
 			(pt1, 2683),

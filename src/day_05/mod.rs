@@ -50,8 +50,8 @@ impl Mapping {
 					continue;
 				}
 
-				// every range that intersects a span cuts it into three (not necessarily
-				// nonempty) sections: left, middle, right
+				// every range that intersects a span cuts it into three (potentially empty)
+				// sections: left, middle, right
 				let left_lo = span.lo;
 				let left_hi = left_lo.max(src);
 
@@ -82,21 +82,18 @@ impl Mapping {
 		let mut split_spans = [unshifted_spans, shifted_spans].concat();
 
 		// merge adjacent/overlapping spans
+
 		split_spans.sort_by_key(|span| span.lo);
 
-		let mut spans = Vec::<Span>::new();
-		for next_span in split_spans {
-			if let Some(prev_span) = spans.pop() {
-				// if the spans overlap, merge them
-				if prev_span.hi >= next_span.lo {
-					spans.push(Span {
-						lo: prev_span.lo,
-						hi: next_span.hi,
-					});
-				} else {
-					spans.push(prev_span);
-					spans.push(next_span);
-				}
+		let mut spans = vec![split_spans[0]];
+		for next_span in split_spans.into_iter().skip(1) {
+			let prev_span = spans.last_mut().unwrap();
+			// if the spans overlap, merge them
+			if prev_span.hi >= next_span.lo {
+				*prev_span = Span {
+					lo: prev_span.lo,
+					hi: next_span.hi,
+				};
 			} else {
 				spans.push(next_span);
 			}
@@ -225,12 +222,16 @@ mod test {
 	use crate::{run_test, run_tests};
 
 	#[test]
-	fn test() {
+	fn sample() {
 		run_tests(
 			&read_input(&read_file!("sample_input.txt")),
 			(pt1, 35),
 			(pt2, 46),
 		);
+	}
+
+	#[test]
+	fn test() {
 		run_tests(
 			&read_input(&read_file!("input.txt")),
 			(pt1, 278_755_257),

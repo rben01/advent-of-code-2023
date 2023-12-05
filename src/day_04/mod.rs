@@ -34,7 +34,7 @@ impl FromStr for Card {
 			regex!(r"Card\s+(?P<id>\d+)\s*:\s*(?P<winning_nums>[^|]+)\|(?P<have_nums>.*)$");
 		let m = card_re.captures(s).to_result()?;
 
-		let id = m.name("id").to_result()?.as_str().parse::<u32>()?;
+		let id = m.name("id").to_result()?.as_str().parse()?;
 
 		let winning_nums = regex!(r"\d+")
 			.find_iter(m.name("winning_nums").to_result()?.as_str())
@@ -69,11 +69,8 @@ fn pt1(cards: impl IntoIterator<Item = &Card>) -> usize {
 		.into_iter()
 		.map(|card| {
 			let n_winning_nums = card.n_winning();
-			if n_winning_nums == 0 {
-				0
-			} else {
-				2_u32.pow((n_winning_nums - 1).cast()).cast()
-			}
+			// 1/2 == 0, 2/2 == 1, 4/2 == 2, ...
+			(2_u32.pow(n_winning_nums.cast()) / 2).cast::<usize>()
 		})
 		.sum()
 }
@@ -90,7 +87,7 @@ fn pt2(cards: &[Card]) -> usize {
 		}
 	}
 
-	card_counts.iter().copied().sum()
+	card_counts.iter().sum()
 }
 // end::pt2[]
 
@@ -102,12 +99,16 @@ mod test {
 	use crate::{run_test, run_tests};
 
 	#[test]
-	fn test() {
+	fn sample() {
 		run_tests(
 			&*read_input(&read_file!("sample_input.txt")),
 			(pt1, 13),
 			(pt2, 30),
 		);
+	}
+
+	#[test]
+	fn test() {
 		run_tests(
 			&*read_input(&read_file!("input.txt")),
 			(pt1, 26_443),
