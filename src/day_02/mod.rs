@@ -60,7 +60,7 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 		.collect()
 }
 
-#[derive(Debug, Clone, Copy, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumString)]
 #[strum(ascii_case_insensitive)]
 enum Color {
 	Red,
