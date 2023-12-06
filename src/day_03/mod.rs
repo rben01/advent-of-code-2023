@@ -35,11 +35,11 @@ enum Entry {
 }
 
 impl From<char> for Entry {
-	fn from(value: char) -> Self {
-		match value {
+	fn from(c: char) -> Self {
+		match c {
 			'.' => Self::Blank,
-			'0'..='9' => Self::Digit(value.to_digit(10).unwrap()),
-			_ => Self::Symbol(value),
+			_ if let Some(digit) = c.to_digit(10) => Self::Digit(digit),
+			_ => Self::Symbol(c),
 		}
 	}
 }
@@ -85,25 +85,24 @@ fn pt2(games: ArrayView2<Entry>) -> u32 {
 	let mut curr_num = 0;
 	let mut curr_gear_locs = HashSet::new();
 
-	for (ri, row) in games.rows().into_iter().enumerate() {
-		for (ci, &entry) in row.into_iter().enumerate() {
-			if ci == 0 || matches!(entry, Entry::Blank | Entry::Symbol(_)) {
-				for &gear_loc in &curr_gear_locs {
-					gears
-						.entry(gear_loc)
-						.and_modify(|nums| nums.push(curr_num))
-						.or_insert_with(|| vec![curr_num]);
-				}
-				curr_num = 0;
-				curr_gear_locs.clear();
+	// important: indexed_iter() iterates rows before columns
+	for ((ri, ci), &entry) in games.indexed_iter() {
+		if ci == 0 || matches!(entry, Entry::Blank | Entry::Symbol(_)) {
+			for &gear_loc in &curr_gear_locs {
+				gears
+					.entry(gear_loc)
+					.and_modify(|nums| nums.push(curr_num))
+					.or_insert_with(|| vec![curr_num]);
 			}
+			curr_num = 0;
+			curr_gear_locs.clear();
+		}
 
-			if let Entry::Digit(d) = entry {
-				curr_num = 10 * curr_num + d;
-				for (x, y) in get_nsew_diag_adjacent((ci, ri), 0..width, 0..height) {
-					if matches!(games[[y, x]], Entry::Symbol('*')) {
-						curr_gear_locs.insert([x, y]);
-					}
+		if let Entry::Digit(d) = entry {
+			curr_num = 10 * curr_num + d;
+			for (x, y) in get_nsew_diag_adjacent((ci, ri), 0..width, 0..height) {
+				if matches!(games[[y, x]], Entry::Symbol('*')) {
+					curr_gear_locs.insert([x, y]);
 				}
 			}
 		}
@@ -124,12 +123,16 @@ mod test {
 	use crate::{run_test, run_tests};
 
 	#[test]
-	fn test() {
+	fn sample() {
 		run_tests(
 			read_input(&read_file!("sample_input.txt")).view(),
 			(pt1, 4361),
 			(pt2, 467_835),
 		);
+	}
+
+	#[test]
+	fn test() {
 		run_tests(
 			read_input(&read_file!("input.txt")).view(),
 			(pt1, 531_561),

@@ -24,36 +24,32 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 				.ok_or_else(|| "could not get game id".to_owned())?;
 
 			let game_id_end = game_id_match.end();
-			let game_id = game_id_match
-				.as_str()
-				.parse::<u32>()
-				.map_err(|e| e.to_string())?;
+			let game_id = game_id_match.as_str().parse::<u32>()?;
 
 			let rounds = regex!(r"[^:;]+")
 				.find_iter(&line[game_id_end..])
 				.map(|m| {
 					let round = m.as_str().trim();
 
-					regex!(r"(?P<count>\d+)\s+(?P<color>\w+)")
+					let counts = regex!(r"(?P<count>\d+)\s+(?P<color>\w+)")
 						.captures_iter(round)
 						.map(|cube_counts| {
 							let count = cube_counts
 								.name("count")
 								.ok_or_else(|| format!("could not get count from round {round:?}"))?
 								.as_str()
-								.parse::<u32>()
-								.map_err(|e| e.to_string())?;
+								.parse()?;
 							let color = cube_counts
 								.name("color")
 								.ok_or_else(|| format!("could not get color from round {round:?}"))?
 								.as_str()
-								.parse::<Color>()
-								.map_err(|e| e.to_string())?;
+								.parse()?;
 
 							Ok(CubeCount { color, count })
 						})
-						.collect::<AocResult<Vec<_>>>()
-						.map(|counts| Round { counts })
+						.collect::<AocResult<Vec<_>>>()?;
+
+					Ok(Round { counts })
 				})
 				.collect::<AocResult<Vec<_>>>()?;
 
@@ -168,12 +164,16 @@ mod test {
 	use crate::{run_test, run_tests};
 
 	#[test]
-	fn test() {
+	fn sample() {
 		run_tests(
 			&*read_input(&read_file!("sample_input.txt")).unwrap(),
 			(pt1, 8),
 			(pt2, 2286),
 		);
+	}
+
+	#[test]
+	fn test() {
 		run_tests(
 			&*read_input(&read_file!("input.txt")).unwrap(),
 			(pt1, 2683),

@@ -72,15 +72,23 @@ mod test {
 	use crate::{run_test, run_tests};
 
 	#[test]
-	fn test() {
+	fn sample_1() {
 		run_test(
 			read_input(&read_file!("sample_input_1.txt")).lines(),
 			(pt1, 142),
 		);
+	}
+
+	#[test]
+	fn sample_2() {
 		run_test(
 			read_input(&read_file!("sample_input_2.txt")).lines(),
 			(pt2, 281),
 		);
+	}
+
+	#[test]
+	fn test() {
 		run_tests(
 			read_input(&read_file!("input.txt")).lines(),
 			(pt1, 55816),
