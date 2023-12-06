@@ -10,7 +10,10 @@
 	clippy::similar_names
 )]
 
+pub(crate) mod enum_map;
 pub(crate) mod utils;
+
+pub(crate) use enum_map::EnumMap;
 
 use std::fmt::{Debug, Display};
 

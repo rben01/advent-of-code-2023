@@ -1,7 +1,7 @@
 // tag::setup[]
-use crate::{read_file, regex, Answer, AocResult};
-use std::collections::HashMap;
-use strum_macros::EnumString;
+use crate::{read_file, regex, Answer, AocResult, EnumMap};
+use strum::EnumCount;
+use strum_macros::{EnumCount, EnumString};
 
 fn ans_for_input(input: &str) -> Answer<u32, u32> {
 	let games = read_input(input).unwrap();
@@ -65,12 +65,19 @@ fn read_input(input: &str) -> AocResult<Vec<Game>> {
 		.collect()
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumString)]
+#[derive(Debug, Clone, Copy, EnumString, EnumCount)]
 #[strum(ascii_case_insensitive)]
+#[repr(usize)]
 enum Color {
 	Red,
 	Green,
 	Blue,
+}
+
+impl From<Color> for usize {
+	fn from(color: Color) -> Self {
+		color as _
+	}
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -90,19 +97,18 @@ struct Game {
 	rounds: Vec<Round>,
 }
 
+type ColorMap<T> = EnumMap<{ Color::COUNT }, Color, T>;
+
 impl Round {
-	fn is_possible(&self, upper_limits: &HashMap<Color, u32>) -> bool {
-		self.counts.iter().all(|CubeCount { color, count }| {
-			count
-				<= upper_limits
-					.get(color)
-					.unwrap_or_else(|| panic!("`upper_limits` did not contain {color:?}"))
-		})
+	fn is_possible(&self, upper_limits: ColorMap<u32>) -> bool {
+		self.counts
+			.iter()
+			.all(|&CubeCount { color, count }| count <= upper_limits[color])
 	}
 }
 
 impl Game {
-	fn is_possible(&self, upper_limits: &HashMap<Color, u32>) -> bool {
+	fn is_possible(&self, upper_limits: ColorMap<u32>) -> bool {
 		self.rounds
 			.iter()
 			.all(|round| round.is_possible(upper_limits))
@@ -128,10 +134,11 @@ fn pt1(games: impl IntoIterator<Item = &Game>) -> u32 {
 	]
 	.into_iter()
 	.map(|CubeCount { color, count }| (color, count))
-	.collect::<HashMap<_, _>>();
+	.collect::<ColorMap<_>>();
+
 	games
 		.into_iter()
-		.filter_map(|game| game.is_possible(&upper_limits).then_some(game.id))
+		.filter_map(|game| game.is_possible(upper_limits).then_some(game.id))
 		.sum()
 }
 // end::pt1[]
@@ -141,13 +148,10 @@ fn pt2(games: impl IntoIterator<Item = &Game>) -> u32 {
 	games
 		.into_iter()
 		.map(|game| {
-			let mut curr_counts = HashMap::new();
+			let mut curr_counts = ColorMap::<u32>::default();
 			for Round { counts } in &game.rounds {
 				for &CubeCount { color, count } in counts {
-					curr_counts
-						.entry(color)
-						.and_modify(|value| *value = count.max(*value))
-						.or_insert(count);
+					curr_counts[color] = curr_counts[color].max(count);
 				}
 			}
 			curr_counts.values().product::<u32>()
