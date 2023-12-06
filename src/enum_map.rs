@@ -13,6 +13,7 @@ use strum::IntoEnumIterator;
 pub(crate) struct EnumMap<const N: usize, E, T>([T; N], PhantomData<E>);
 
 impl<const N: usize, E, T> EnumMap<N, E, T> {
+	#[allow(dead_code)]
 	pub(crate) fn new(arr: [T; N]) -> Self {
 		Self(arr, PhantomData)
 	}
