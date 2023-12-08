@@ -18,8 +18,8 @@ impl<const N: usize, E, T> EnumMap<N, E, T> {
 		Self(arr, PhantomData)
 	}
 
-	pub(crate) fn values(&self) -> <&[T] as IntoIterator>::IntoIter {
-		self.0.iter()
+	pub(crate) fn into_array(self) -> [T; N] {
+		self.0
 	}
 }
 

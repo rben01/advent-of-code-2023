@@ -150,7 +150,7 @@ fn pt2(games: impl IntoIterator<Item = &Game>) -> u32 {
 					curr_counts[color] = curr_counts[color].max(count);
 				}
 			}
-			curr_counts.values().product::<u32>()
+			curr_counts.into_array().iter().product::<u32>()
 		})
 		.sum()
 }
