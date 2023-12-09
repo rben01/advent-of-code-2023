@@ -1,6 +1,6 @@
 // tag::setup[]
 use crate::{error::AocResult, read_file, regex, Answer, AocError, ToResultDefaultErr};
-use std::{array, collections::HashMap, str::FromStr};
+use std::str::FromStr;
 
 fn ans_for_input(input: &str) -> Answer<usize, usize> {
 	let input = read_input(input);

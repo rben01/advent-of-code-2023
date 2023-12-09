@@ -46,38 +46,6 @@ impl TryFrom<char> for Direction {
 	}
 }
 
-#[derive(Debug, Clone)]
-struct DirectionIter {
-	directions: Vec<Direction>,
-	index: usize,
-}
-
-impl FromStr for DirectionIter {
-	type Err = AocError;
-
-	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		let directions = s
-			.chars()
-			.map(Direction::try_from)
-			.collect::<AocResult<_>>()?;
-		Ok(Self {
-			directions,
-			index: 0,
-		})
-	}
-}
-
-impl Iterator for DirectionIter {
-	type Item = Direction;
-
-	fn next(&mut self) -> Option<Self::Item> {
-		let i = &mut self.index;
-		let ans = self.directions[*i];
-		*i = (*i + 1) % self.directions.len();
-		Some(ans)
-	}
-}
-
 type Pair = EnumMap<{ Direction::COUNT }, Direction, String>;
 
 #[derive(Debug, Clone)]
@@ -98,7 +66,7 @@ impl FromStr for Input {
 			.map(Direction::try_from)
 			.collect::<AocResult<_>>()?;
 
-		lines.next().unwrap();
+		lines.next().to_result()?;
 
 		let nodes = lines
 			.map(|line| {
@@ -123,7 +91,8 @@ fn pt1(input: &Input) -> usize {
 	let mut n_steps = 0;
 	while loc != "ZZZ" {
 		let pair = &nodes[loc];
-		loc = &pair[directions[n_steps % directions.len()]];
+		let direction = directions[n_steps % directions.len()];
+		loc = &pair[direction];
 		n_steps += 1;
 	}
 	n_steps
@@ -140,14 +109,14 @@ fn pt2(input: &Input) -> usize {
 			continue;
 		}
 
-		let mut i = 0;
+		let mut n_steps = 0;
 		let mut loc = starting_point;
 		while !loc.ends_with('Z') {
-			let direction = directions[i % directions.len()];
+			let direction = directions[n_steps % directions.len()];
 			loc = &nodes[loc][direction];
-			i += 1;
+			n_steps += 1;
 		}
-		cycle_lens.push(i);
+		cycle_lens.push(n_steps);
 	}
 
 	cycle_lens.into_iter().fold(1, |acc, n| acc.lcm(&n))
