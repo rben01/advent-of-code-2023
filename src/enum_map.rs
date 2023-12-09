@@ -9,7 +9,7 @@ use strum::IntoEnumIterator;
 // We want to add `E: EnumCount` so we can replace `N` with `E::COUNT`, but this
 // requires a highly unstable compiler feature, `generic_const_exprs`. So we're stuck
 // with the somewhat redundant `N`
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct EnumMap<const N: usize, E, T>([T; N], PhantomData<E>);
 
 impl<const N: usize, E, T> EnumMap<N, E, T> {

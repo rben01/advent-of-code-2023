@@ -2,7 +2,8 @@
 	binary_heap_into_iter_sorted,
 	anonymous_lifetime_in_impl_trait,
 	if_let_guard,
-	array_try_map
+	array_try_map,
+	array_try_from_fn
 )]
 #![warn(clippy::pedantic)]
 #![allow(
@@ -34,7 +35,7 @@ include_days!(
 	day_05:"day_05",
 	day_06:"day_06",
 	day_07:"day_07",
-   //  day_08:"day_08",
+	day_08:"day_08",
    //  day_09:"day_09",
    //  day_10:"day_10",
    //  day_11:"day_11",
