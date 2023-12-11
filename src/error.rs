@@ -7,6 +7,7 @@ pub(crate) enum AocError {
 	FromIntError(ParseIntError),
 	StrumParse(strum::ParseError),
 	OptionWasNone(&'static str),
+	ShapeError(ndarray::ShapeError),
 	Other(String),
 }
 
@@ -19,6 +20,12 @@ impl From<ParseIntError> for AocError {
 impl From<strum::ParseError> for AocError {
 	fn from(err: strum::ParseError) -> Self {
 		Self::StrumParse(err)
+	}
+}
+
+impl From<ndarray::ShapeError> for AocError {
+	fn from(err: ndarray::ShapeError) -> Self {
+		Self::ShapeError(err)
 	}
 }
 
