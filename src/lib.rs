@@ -4,7 +4,8 @@
 	if_let_guard,
 	array_try_map,
 	array_try_from_fn,
-	iter_map_windows
+	iter_map_windows,
+	let_chains
 )]
 #![warn(clippy::pedantic)]
 #![allow(
