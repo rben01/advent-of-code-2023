@@ -17,7 +17,7 @@ fn read_input(input: &str) -> Input {
 	input.parse().unwrap()
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Direction {
 	N,
 	S,
@@ -37,7 +37,7 @@ impl Direction {
 	}
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Pipe {
 	/// Vertical
 	Ns,
@@ -193,9 +193,7 @@ impl FromStr for Input {
 		};
 
 		if inc_dir_idx < 2 {
-			return Err(AocError::Other(format!(
-				"only {inc_dir_idx} incoming pipes at {start:?}"
-			)));
+			return Err(AocError::Other(format!("only {inc_dir_idx} incoming pipes at {start:?}")));
 		}
 
 		let starting_pipe = match incoming_directions {
@@ -206,9 +204,9 @@ impl FromStr for Input {
 			[S, E] | [E, S] => Pipe::Se,
 			[S, W] | [W, S] => Pipe::Sw,
 			_ => {
-				return Err(AocError::Other(format!(
-					"invalid incoming_directions {incoming_directions:?}"
-				)))
+				return Err(
+					AocError::Other(format!("invalid incoming_directions {incoming_directions:?}"))
+				)
 			}
 		};
 
@@ -284,12 +282,15 @@ fn pt1(input: &Input) -> usize {
 
 // tag::pt2[]
 fn pt2(input: &Input) -> usize {
+	use Direction::*;
+	use Pipe::*;
+
 	let map = &input.map;
 	let mut n_interior_points = 0;
 
 	let path_points = input.traverse().into_iter().collect::<HashMap<_, _>>();
 
-	let mut bend_direction = Direction::E;
+	let mut bend_direction = E;
 
 	for ((ri, ci), _) in map.indexed_iter() {
 		if path_points.contains_key(&[ri, ci]) {
@@ -303,24 +304,18 @@ fn pt2(input: &Input) -> usize {
 		let mut odd_parity = false;
 
 		for i in ri..map.nrows() {
-			if let Some(pipe) = path_points.get(&[i, ci]) {
-				match pipe {
-					Pipe::Ns => {}
-					Pipe::Ew => odd_parity ^= true,
-					// The N* pipes must be preceded at some point in time by a S* pipe
-					Pipe::Ne => {
-						if bend_direction == Direction::W {
-							odd_parity ^= true;
-						}
-					}
-					Pipe::Nw => {
-						if bend_direction == Direction::E {
-							odd_parity ^= true;
-						}
-					}
-					// Set the direction of the preceding bend
-					Pipe::Se => bend_direction = Direction::E,
-					Pipe::Sw => bend_direction = Direction::W,
+			if let Some(&pipe) = path_points.get(&[i, ci]) {
+				// The N* pipes must be preceded at some point in time by a S* pipe
+				if pipe == Ew
+					|| pipe == Ne && bend_direction == W
+					|| pipe == Nw && bend_direction == E
+				{
+					odd_parity ^= true;
+				// Set the direction of the preceding bend
+				} else if pipe == Se {
+					bend_direction = Direction::E;
+				} else if pipe == Sw {
+					bend_direction = Direction::W;
 				}
 			}
 		}
