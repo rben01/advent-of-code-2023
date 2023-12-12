@@ -66,17 +66,6 @@ impl Pipe {
 			Sw => (S, W),
 		}
 	}
-
-	fn next_dir(self, from_dir: Direction) -> Direction {
-		let (d1, d2) = self.directions();
-		if d1 == from_dir {
-			d2
-		} else if d2 == from_dir {
-			d1
-		} else {
-			panic!("invalid pipe and direction: {self:?}, {from_dir:?}")
-		}
-	}
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -137,60 +126,35 @@ impl FromStr for Input {
 		let mut map = Array2::from_shape_vec((height, width), elems)?;
 		let start = start.unwrap();
 
-		let [ri, ci] = start;
+		let [start_row, start_col] = start;
 
 		let mut incoming_directions = [N; 2];
 		let mut inc_dir_idx = 0;
 
 		let idx_err = || AocError::Other(format!("too many incoming direcions at {start:?}"));
 
-		if ri > 0 {
-			if let Tile::Pipe(pipe) = map[[ri - 1, ci]] {
+		// figure out the directions of the pipes leading into the Start pipe
+		for (ri, ci, rel_dir) in [
+			(start_row.checked_sub(1), Some(start_col), N),
+			(start_row.checked_add(1), Some(start_col), S),
+			(Some(start_row), start_col.checked_sub(1), W),
+			(Some(start_row), start_col.checked_add(1), E),
+		] {
+			if let Some(ri) = ri
+				&& let Some(ci) = ci
+				&& let Tile::Pipe(pipe) = map[[ri, ci]]
+			{
 				let (d1, d2) = pipe.directions();
-				if d1 == S || d2 == S {
+				// e.g. if the pipe north of Start has an end pointing south, then north is
+				// one of the incoming directions
+				if d1 == rel_dir.invert() || d2 == rel_dir.invert() {
 					*incoming_directions
 						.get_mut(inc_dir_idx)
-						.ok_or_else(idx_err)? = N;
-					inc_dir_idx += 1;
-				}
-			}
-		};
-
-		if ri < height {
-			if let Tile::Pipe(pipe) = map[[ri + 1, ci]] {
-				let (d1, d2) = pipe.directions();
-				if d1 == N || d2 == N {
-					*incoming_directions
-						.get_mut(inc_dir_idx)
-						.ok_or_else(idx_err)? = S;
-					inc_dir_idx += 1;
-				}
-			}
-		};
-
-		if ci > 0 {
-			if let Tile::Pipe(pipe) = map[[ri, ci - 1]] {
-				let (d1, d2) = pipe.directions();
-				if d1 == E || d2 == E {
-					*incoming_directions
-						.get_mut(inc_dir_idx)
-						.ok_or_else(idx_err)? = W;
+						.ok_or_else(idx_err)? = rel_dir;
 					inc_dir_idx += 1;
 				}
 			}
 		}
-
-		if ci < width {
-			if let Tile::Pipe(pipe) = map[[ri, ci + 1]] {
-				let (d1, d2) = pipe.directions();
-				if d1 == W || d2 == W {
-					*incoming_directions
-						.get_mut(inc_dir_idx)
-						.ok_or_else(idx_err)? = E;
-					inc_dir_idx += 1;
-				}
-			}
-		};
 
 		if inc_dir_idx < 2 {
 			return Err(AocError::Other(format!("only {inc_dir_idx} incoming pipes at {start:?}")));
@@ -217,7 +181,7 @@ impl FromStr for Input {
 }
 
 impl Input {
-	// Todo: make this an iterator instead of a Vec
+	// Todo: make this an iterator instead of a Vec (Rust generators when?)
 	fn traverse(&self) -> Vec<([usize; 2], Pipe)> {
 		use Direction::*;
 
@@ -252,7 +216,11 @@ impl Input {
 					} else if prev_dir == d2 {
 						d1
 					} else {
-						panic!("invalid move_dir, prev_dir, directions: {move_dir:?}, {prev_dir:?}, {:?}", (d1, d2));
+						panic!(
+							"invalid move_dir, prev_dir, directions: \
+							 {move_dir:?}, {prev_dir:?}, {:?}",
+							(d1, d2)
+						);
 					};
 					(pipe, dir)
 				}
@@ -285,12 +253,35 @@ fn pt2(input: &Input) -> usize {
 	use Direction::*;
 	use Pipe::*;
 
-	let map = &input.map;
-	let mut n_interior_points = 0;
+	// Figure out whether each non-path-pipe point on the map is "inside" or "outside" by
+	// counting its crossings with the path-pipes, starting at the point in question and
+	// heading south until the edge of the map is reached. An odd number of crossings
+	// means it's inside; an even number means it's outside.
 
+	let map = &input.map;
 	let path_points = input.traverse().into_iter().collect::<HashMap<_, _>>();
 
-	let mut bend_direction = E;
+	let mut n_interior_points = 0;
+
+	// This is needed to track whether, after riding along some amount of
+	// north-south-oriented pipe, when we leave that length of pipe, we've actually
+	// crossed a horizontal section of pipe, or have just ridden along e.g. the spine of
+	// an uppercase 'D'. If the beginning and end of the section of vertical pipe we're
+	// riding point in opposite directions, we crossed the path; if the same direction,
+	// we haven't. \
+	// ex: \
+	//    . \
+	//   -7 \
+	//    L- \
+	// Heading south from the dot, we do cross from inside (resp. outside) the path to
+	// outside (resp. inside). Whereas: \
+	//    . \
+	//   -7 \
+	//   -J \
+	// Heading south from the dot, we do not materially cross the path. \
+	// The initial value of this doesn't matter; it'll always be overwritten before being
+	// read.
+	let mut bend_direction = Direction::N;
 
 	for ((ri, ci), _) in map.indexed_iter() {
 		if path_points.contains_key(&[ri, ci]) {
@@ -300,7 +291,7 @@ fn pt2(input: &Input) -> usize {
 		// check number of crossings between point and (perpendicular) pipes from point to
 		// exterior of map. if parity is odd, point is inside (enclosed by pipes) \
 		// note that `x ^= true` is equivalent to `x = !x`, ie `toggle` (which doesn't
-		// exist)
+		// exist in Rust)
 		let mut odd_parity = false;
 
 		for i in ri..map.nrows() {
@@ -313,9 +304,9 @@ fn pt2(input: &Input) -> usize {
 					odd_parity ^= true;
 				// Set the direction of the preceding bend
 				} else if pipe == Se {
-					bend_direction = Direction::E;
+					bend_direction = E;
 				} else if pipe == Sw {
-					bend_direction = Direction::W;
+					bend_direction = W;
 				}
 			}
 		}
