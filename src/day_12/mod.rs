@@ -4,6 +4,7 @@ use crate::{
 	read_file, Answer, AocError,
 };
 use std::{
+	collections::HashMap,
 	fmt::{self, Write},
 	str::FromStr,
 };
@@ -25,7 +26,7 @@ fn read_input(input: &str) -> Vec<Row> {
 		.unwrap()
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
 enum Spring {
 	Operational,
@@ -38,7 +39,7 @@ impl From<Spring> for usize {
 	}
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Tile {
 	Known(Spring),
 	Unknown,
@@ -63,26 +64,6 @@ struct Row {
 	lengths: Vec<usize>,
 }
 
-// tag::debugging[]
-impl fmt::Display for Row {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		for t in &self.tiles {
-			f.write_char(match t {
-				Tile::Known(Spring::Operational) => '.',
-				Tile::Known(Spring::Damaged) => '#',
-				Tile::Unknown => '?',
-			})?;
-		}
-
-		for n in &self.lengths {
-			write!(f, ",{n}")?;
-		}
-
-		Ok(())
-	}
-}
-// end::debugging[]
-
 impl FromStr for Row {
 	type Err = AocError;
 
@@ -105,184 +86,105 @@ impl FromStr for Row {
 	}
 }
 
-#[allow(clippy::too_many_lines)]
-impl Row {
-	/// precondition: every row ends with a known operational tile (which is used to
-	/// "cleave off" the last damaged run in case it goes all the way to the end)
-	fn count_solns(&self) -> usize {
-		#[derive(Debug, Clone, Copy)]
-		struct Candidate {
-			up_to_idx: usize,
-			complete_runs_seen: usize,
-			curr_run_len: usize,
+#[derive(Debug, Clone, Copy)]
+struct RowRef<'a> {
+	tiles: &'a [Tile],
+	lengths: &'a [usize],
+}
+
+// tag::debugging[]
+impl fmt::Display for RowRef<'_> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		for t in self.tiles {
+			f.write_char(match t {
+				Tile::Known(Spring::Operational) => '.',
+				Tile::Known(Spring::Damaged) => '#',
+				Tile::Unknown => '?',
+			})?;
 		}
 
-		println!("{self}");
+		f.write_char(',')?;
+		for n in self.lengths {
+			write!(f, "{n},")?;
+		}
 
+		Ok(())
+	}
+}
+// end::debugging[]
+
+impl<'a> RowRef<'a> {
+	fn new(Row { tiles, lengths }: &'a Row) -> Self {
+		Self { tiles, lengths }
+	}
+}
+
+impl<'a> RowRef<'a> {
+	/// Strategy: divide and conquer. Take a length of `middle_length` damaged springs
+	/// and run it over the list of tiles; where it "fits" (there is a contiguous section
+	/// of either unknown or known-damaged tiles, and before and after it are either the
+	/// ends of the list or  unknown or known-operational tiles), take the front lengths
+	/// and count how many ways they work for the part before where the `middle_length`
+	/// fit, and multiply that by the number of ways the back lengths work for the part
+	/// after where the middle length fit. Sum over all places the middle length fit;
+	/// tada.
+	fn count_solns(self, cache: &mut HashMap<(&'a [Tile], &'a [usize]), usize>) -> usize {
 		let Self { tiles, lengths } = self;
-		let tiles = {
-			let mut v = tiles.clone();
-			// a dummy operation tile at the ends to "cleave off" runs
-			v.push(Tile::Known(Spring::Operational));
-			v
-		};
+		if let Some(&count) = cache.get(&(tiles, lengths)) {
+			return count;
+		}
 
-		let min_runs_by_idx =
-			{
-				let mut v = vec![0; tiles.len()];
-				let mut in_run = false;
-				let mut n_runs = 0;
+		if lengths.is_empty() {
+			return usize::from(tiles.iter().all(|&t| t != Tile::Known(Spring::Damaged)));
+		}
 
-				for (i, tile) in tiles.iter().enumerate().rev() {
-					match tile {
-						Tile::Known(Spring::Damaged) => in_run = true,
-						Tile::Known(Spring::Operational) => {
-							if in_run {
-								n_runs += 1;
-								in_run = false;
-							}
-						}
-						Tile::Unknown => {
-							if in_run {
-								n_runs += 1;
-								in_run = false;
-							} else {
-								in_run = true;
-							}
-						}
-					}
-					v[i] = n_runs;
-				}
+		// since `lengths` is not empty, `back` (on the line that assigns `front`, not on
+		// the line that assigns `len`) has at least one elem
+		let (front, back) = lengths.split_at(lengths.len() / 2);
+		let (&len, back) = back.split_first().unwrap();
 
-				v
-			};
-
-		println!("{min_runs_by_idx:?}");
-
-		let max_runs_by_idx =
-			{
-				let mut v = vec![0; tiles.len()];
-				let mut in_run = false;
-				let mut n_runs = 0;
-
-				for (i, tile) in tiles.iter().enumerate() {
-					match tile {
-						Tile::Known(Spring::Damaged) => in_run = true,
-						Tile::Known(Spring::Operational) => {
-							if in_run {
-								n_runs += 1;
-								in_run = false;
-							}
-						}
-						Tile::Unknown => {
-							if in_run {
-								n_runs += 1;
-								in_run = false;
-							} else {
-								in_run = true;
-							}
-						}
-					}
-					v[i] = n_runs;
-				}
-
-				v
-			};
-
-		// println!("{:?}", (&min_runs_by_idx, &max_runs_by_idx));
-
-		let n_lengths = lengths.len();
+		if len > tiles.len() {
+			return 0;
+		}
 
 		let mut count = 0;
 
-		let mut candidates = vec![Candidate {
-			up_to_idx: 0,
-			complete_runs_seen: 0,
-			curr_run_len: 0,
-		}];
-
-		'candidates: while let Some(Candidate {
-			up_to_idx,
-			mut complete_runs_seen,
-			mut curr_run_len,
-		}) = candidates.pop()
-		{
-			// println!(
-			// 	"{:?}",
-			// 	(
-			// 		candidate,
-			// 		max_runs_by_idx[up_to_idx],
-			// 		min_runs_by_idx[up_to_idx]
-			// 	)
-			// );
-			if complete_runs_seen > max_runs_by_idx[up_to_idx]
-				|| complete_runs_seen + min_runs_by_idx[up_to_idx] + 1 < n_lengths
+		for i in 0..=(tiles.len() - len) {
+			if tiles[i..i + len]
+				.iter()
+				.all(|&t| t != Tile::Known(Spring::Operational))
 			{
-				// println!("{self}, continuing");
-				continue;
-			}
-
-			for (i, &tile) in tiles.iter().enumerate().skip(up_to_idx) {
-				let Tile::Known(state) = tile else {
-					// this is the first unknown tile yet to be (tentatively) replaced
-
-					// check if Operational is a valid candidate
-					if curr_run_len == 0 || curr_run_len == lengths[complete_runs_seen] {
-						candidates.push(Candidate {
-							up_to_idx: i + 1,
-							complete_runs_seen: usize::from(curr_run_len > 0) + complete_runs_seen,
-							curr_run_len: 0,
-						});
+				let front_count = if i == 0 {
+					usize::from(front.is_empty())
+				} else if tiles[i - 1] == Tile::Known(Spring::Damaged) {
+					continue;
+				} else {
+					RowRef {
+						tiles: &tiles[..i - 1],
+						lengths: front,
 					}
-
-					// check if Damaged is a valid candidate
-					if complete_runs_seen < n_lengths && curr_run_len < lengths[complete_runs_seen]
-					{
-						candidates.push(Candidate {
-							up_to_idx: i + 1,
-							complete_runs_seen,
-							curr_run_len: curr_run_len + 1,
-						});
-					}
-
-					continue 'candidates;
+					.count_solns(cache)
 				};
 
-				match state {
-					Spring::Operational => {
-						if curr_run_len > 0 {
-							if curr_run_len != lengths[complete_runs_seen] {
-								continue 'candidates;
-							}
-
-							complete_runs_seen += 1;
-
-							if complete_runs_seen > n_lengths {
-								continue 'candidates;
-							}
-
-							curr_run_len = 0;
-						}
+				let back_count = if i == tiles.len() - len {
+					usize::from(back.is_empty())
+				} else if tiles[i + len] == Tile::Known(Spring::Damaged) {
+					continue;
+				} else {
+					RowRef {
+						tiles: &tiles[i + len + 1..],
+						lengths: back,
 					}
-					Spring::Damaged => {
-						curr_run_len += 1;
+					.count_solns(cache)
+				};
 
-						if complete_runs_seen >= n_lengths
-							|| curr_run_len > lengths[complete_runs_seen]
-						{
-							continue 'candidates;
-						}
-					}
-				}
-			}
-
-			if complete_runs_seen >= n_lengths {
-				count += 1;
+				count += front_count * back_count;
 			}
 		}
 
-		dbg!(count)
-		// count
+		cache.insert((tiles, lengths), count);
+
+		count
 	}
 }
 
@@ -290,7 +192,10 @@ impl Row {
 
 // tag::pt1[]
 fn pt1(rows: &[Row]) -> usize {
-	rows.iter().map(|row| row.count_solns()).sum()
+	let mut cache = HashMap::new();
+	rows.iter()
+		.map(|row| RowRef::new(row).count_solns(&mut cache))
+		.sum()
 }
 // end::pt1[]
 
