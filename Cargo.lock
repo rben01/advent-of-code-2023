@@ -6,7 +6,6 @@ version = 3
 name = "advent_of_code_2023"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "itertools",
  "ndarray",
  "num",
@@ -24,12 +23,6 @@ checksum = "b2969dcb958b36655471fc61f7e416fa76033bdd4bfed0678d8fee1e2d07a1f0"
 dependencies = [
  "memchr",
 ]
-
-[[package]]
-name = "anyhow"
-version = "1.0.75"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4668cab20f66d8d020e1fbc0ebe47217433c1b6c8f2040faf858554e394ace6"
 
 [[package]]
 name = "autocfg"
