@@ -43,7 +43,7 @@ include_days!(
 	day_10:"day_10",
 	day_11:"day_11",
 	day_12:"day_12",
-   //  day_13:"day_13",
+	day_13:"day_13",
    //  day_14:"day_14",
    //  day_15:"day_15",
    //  day_16:"day_16",
