@@ -6,6 +6,7 @@ use crate::{
 use std::{
 	collections::HashMap,
 	fmt::{self, Write},
+	ops::ControlFlow,
 	str::FromStr,
 };
 
@@ -154,29 +155,60 @@ impl<'a> RowRef<'a> {
 				.iter()
 				.all(|&t| t != Tile::Known(Spring::Operational))
 			{
-				let front_count = if i == 0 {
-					usize::from(front.is_empty())
-				} else if tiles[i - 1] == Tile::Known(Spring::Damaged) {
-					continue;
-				} else {
-					RowRef {
-						tiles: &tiles[..i - 1],
-						lengths: front,
+				let get_front_count = |cache: &mut HashMap<(&'a [Tile], &'a [usize]), usize>| {
+					if i == 0 {
+						ControlFlow::Continue(usize::from(front.is_empty()))
+					} else if tiles[i - 1] == Tile::Known(Spring::Damaged) {
+						ControlFlow::Break(())
+					} else {
+						ControlFlow::Continue(
+							RowRef {
+								tiles: &tiles[..i - 1],
+								lengths: front,
+							}
+							.count_solns(cache),
+						)
 					}
-					.count_solns(cache)
 				};
 
-				let back_count = if i == tiles.len() - len {
-					usize::from(back.is_empty())
-				} else if tiles[i + len] == Tile::Known(Spring::Damaged) {
-					continue;
-				} else {
-					RowRef {
-						tiles: &tiles[i + len + 1..],
-						lengths: back,
+				let get_back_count = |cache: &mut HashMap<(&'a [Tile], &'a [usize]), usize>| {
+					if i == tiles.len() - len {
+						ControlFlow::Continue(usize::from(back.is_empty()))
+					} else if tiles[i + len] == Tile::Known(Spring::Damaged) {
+						ControlFlow::Break(())
+					} else {
+						ControlFlow::Continue(
+							RowRef {
+								tiles: &tiles[i + len + 1..],
+								lengths: back,
+							}
+							.count_solns(cache),
+						)
 					}
-					.count_solns(cache)
 				};
+
+				let front_count;
+				let back_count;
+				if i < (tiles.len() - len) / 2 {
+					front_count = match get_front_count(cache) {
+						// the award for most confusing naming goes to...
+						ControlFlow::Continue(0) | ControlFlow::Break(()) => continue,
+						ControlFlow::Continue(n) => n,
+					};
+					back_count = match get_back_count(cache) {
+						ControlFlow::Continue(0) | ControlFlow::Break(()) => continue,
+						ControlFlow::Continue(n) => n,
+					};
+				} else {
+					back_count = match get_back_count(cache) {
+						ControlFlow::Continue(0) | ControlFlow::Break(()) => continue,
+						ControlFlow::Continue(n) => n,
+					};
+					front_count = match get_front_count(cache) {
+						ControlFlow::Continue(0) | ControlFlow::Break(()) => continue,
+						ControlFlow::Continue(n) => n,
+					};
+				}
 
 				count += front_count * back_count;
 			}
