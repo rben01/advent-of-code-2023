@@ -110,6 +110,10 @@ fn count_solns<'a>(
 
 	for i in 0..=(tiles.len() - len) {
 		if valid_run_lens[[i, len]] {
+			// optimization: whichever of front and back is shorter, compute its count
+			// first — it'll be more likely be 0, and then we can continue without
+			// computing the other
+
 			let get_front_count = |cache: &mut HashMap<(&'a [Tile], &'a [usize]), usize>| {
 				if i == 0 {
 					ControlFlow::Continue(usize::from(front.is_empty()))
@@ -212,9 +216,11 @@ impl Row {
 // end::setup[]
 
 // tag::pt1[]
-fn pt1(rows: &[Row]) -> usize {
+fn pt1(rows: impl IntoIterator<Item = &Row>) -> usize {
 	let mut cache = HashMap::new();
-	rows.iter().map(|row| row.count_solns(&mut cache)).sum()
+	rows.into_iter()
+		.map(|row| row.count_solns(&mut cache))
+		.sum()
 }
 // end::pt1[]
 
