@@ -5,7 +5,8 @@
 	array_try_map,
 	array_try_from_fn,
 	iter_map_windows,
-	let_chains
+	let_chains,
+	iter_next_chunk
 )]
 #![warn(clippy::pedantic)]
 #![allow(
@@ -45,7 +46,7 @@ include_days!(
 	day_12:"day_12",
 	day_13:"day_13",
    //  day_14:"day_14",
-   //  day_15:"day_15",
+	day_15:"day_15",
    //  day_16:"day_16",
    //  day_17:"day_17",
    //  day_18:"day_18",
