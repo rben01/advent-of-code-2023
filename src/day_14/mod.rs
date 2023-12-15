@@ -178,16 +178,6 @@ fn pt2(grid: &mut Grid) -> usize {
 			}
 		}
 
-		// match seen_grid_idxs.entry(round_stone_idxs) {
-		// 	// found a cycle
-		// 	Entry::Occupied(loop_start_idx) => {
-
-		// 	}
-		// 	Entry::Vacant(v) => {
-		// 		v.insert(i);
-		// 	}
-		// }
-
 		for dir in [N, W, S, E] {
 			grid.tilt(dir);
 		}
