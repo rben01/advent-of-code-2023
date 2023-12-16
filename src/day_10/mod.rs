@@ -5,7 +5,6 @@ use std::{collections::HashMap, str::FromStr};
 
 fn ans_for_input(input: &str) -> Answer<usize, usize> {
 	let input = read_input(input);
-	println!("{input:?}");
 	(10, (pt1(&input), pt2(&input))).into()
 }
 
