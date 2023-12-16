@@ -120,7 +120,9 @@ fn pt2(instrs: &[Instr]) -> u32 {
 		let box_ = &mut boxes[box_idx];
 		match op {
 			Operation::Remove => {
-				box_.retain(|lens| lens.label != label);
+				if let Some(i) = box_.iter().position(|lens| lens.label == label) {
+					box_.remove(i);
+				}
 			}
 			&Operation::Add(focal_len) => match box_.iter_mut().find(|lens| lens.label == label) {
 				Some(lens) => lens.focal_len = focal_len,
