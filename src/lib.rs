@@ -19,6 +19,7 @@
 
 pub(crate) mod enum_map;
 pub(crate) mod error;
+pub(crate) mod grid;
 pub(crate) mod utils;
 
 pub(crate) use enum_map::EnumMap;
@@ -48,8 +49,8 @@ include_days!(
 	day_13:"day_13",
 	day_14:"day_14",
 	day_15:"day_15",
-   //  day_16:"day_16",
-   //  day_17:"day_17",
+	day_16:"day_16",
+	day_17:"day_17",
 	day_18:"day_18",
    //  day_19:"day_19",
    //  day_20:"day_20",
