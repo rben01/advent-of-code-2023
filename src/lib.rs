@@ -13,7 +13,8 @@
 	clippy::enum_glob_use,
 	clippy::missing_panics_doc,
 	clippy::must_use_candidate,
-	clippy::redundant_closure_for_method_calls
+	clippy::redundant_closure_for_method_calls,
+	clippy::similar_names
 )]
 
 pub(crate) mod enum_map;
@@ -49,7 +50,7 @@ include_days!(
 	day_15:"day_15",
    //  day_16:"day_16",
    //  day_17:"day_17",
-   //  day_18:"day_18",
+	day_18:"day_18",
    //  day_19:"day_19",
    //  day_20:"day_20",
    //  day_21:"day_21",
