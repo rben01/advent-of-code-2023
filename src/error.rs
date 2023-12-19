@@ -1,4 +1,4 @@
-use std::num::ParseIntError;
+use std::{char::TryFromCharError, num::ParseIntError};
 
 pub(crate) type AocResult<T> = Result<T, AocError>;
 
@@ -8,6 +8,7 @@ pub(crate) enum AocError {
 	StrumParse(strum::ParseError),
 	OptionWasNone(&'static str),
 	ShapeError(ndarray::ShapeError),
+	TryFromChar(TryFromCharError),
 	Other(String),
 }
 
@@ -26,6 +27,12 @@ impl From<strum::ParseError> for AocError {
 impl From<ndarray::ShapeError> for AocError {
 	fn from(err: ndarray::ShapeError) -> Self {
 		Self::ShapeError(err)
+	}
+}
+
+impl From<TryFromCharError> for AocError {
+	fn from(err: TryFromCharError) -> Self {
+		Self::TryFromChar(err)
 	}
 }
 
