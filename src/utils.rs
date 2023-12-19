@@ -3,6 +3,14 @@
 use num::{CheckedAdd, CheckedSub, Num, One, Zero};
 use std::ops::RangeBounds;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum Direction {
+	N,
+	S,
+	E,
+	W,
+}
+
 fn get_adjacent<
 	'a,
 	X: 'a + Copy + Num + Zero + One + CheckedAdd + CheckedSub + Ord,

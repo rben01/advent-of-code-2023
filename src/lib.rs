@@ -18,6 +18,7 @@
 
 pub(crate) mod enum_map;
 pub(crate) mod error;
+pub(crate) mod grid;
 pub(crate) mod utils;
 
 pub(crate) use enum_map::EnumMap;
