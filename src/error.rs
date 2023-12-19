@@ -42,6 +42,12 @@ impl From<String> for AocError {
 	}
 }
 
+impl From<!> for AocError {
+	fn from(err: !) -> Self {
+		err
+	}
+}
+
 pub trait ToResultDefaultErr<T> {
 	/// Converts something to a "default" Result
 	/// ## Ok
