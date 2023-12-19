@@ -1,5 +1,5 @@
 // tag::setup[]
-use crate::{error::AocError, grid::Grid, read_file, utils::Direction, Answer, Cast};
+use crate::{error::AocError, grid::Grid, read_file, utils::Direction, Answer};
 use priority_queue::PriorityQueue;
 use std::{cmp, collections::HashSet};
 
